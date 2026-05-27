@@ -393,7 +393,7 @@ function animate() {
 
     // Feed vehicle the target in world space — same as debug page
     const navTarget = new THREE.Vector3(navX * halfW, navY * halfH, 0);
-    const { speed } = vehicle.update(navTarget, dt);
+    const { speed, yawError } = vehicle.update(navTarget, dt);
 
     // Apply vehicle to dolphin group
     vehicle.applyTo(dolphinGroup);
@@ -404,7 +404,7 @@ function animate() {
     dolphinPos.y = vehicle.pos.y / halfH;
 
     // Swimming animation
-    animateDolphin(speed, dt);
+    animateDolphin(speed, dt, yawError);
 
     // Bubbles — gentle drift upward, slow fade out
     const bp = bubbleGeo.attributes.position;

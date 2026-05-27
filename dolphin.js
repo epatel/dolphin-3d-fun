@@ -10,6 +10,19 @@ const SEG_PARAMS = {
     5: [4.0, 10], 6: [4.5, 15], 7: [5.0, 20], 8: [6.0, 30], 9: [0, 0],
 };
 
+// Precompute per-vertex normalized body position for lateral bending (0 = nose, 1 = tail)
+let minZ = Infinity, maxZ = -Infinity;
+for (let i = 0; i < VERT_COUNT; i++) {
+    const z = RAW_POS[i * 3 + 2];
+    if (z < minZ) minZ = z;
+    if (z > maxZ) maxZ = z;
+}
+const zRange = maxZ - minZ || 1;
+const BODY_T = new Float32Array(VERT_COUNT);
+for (let i = 0; i < VERT_COUNT; i++) {
+    BODY_T[i] = (maxZ - RAW_POS[i * 3 + 2]) / zRange;
+}
+
 /**
  * Creates an Atlantis dolphin mesh with smooth normals and swimming animation.
  * Returns a group containing the mesh and a glow light, plus an update function.
@@ -100,19 +113,31 @@ export function createDolphin() {
 
     // Animation state
     let htail = 0;
+    let smoothedYaw = 0;
+    const BEND_RESPONSE = 3.5;
+    const BEND_SCALE = 0.5;
     const posAttr = geo.attributes.position;
 
-    /**
-     * Animate the swimming motion.
-     * @param {number} speed - current swim speed (affects flap rate)
-     * @param {number} dt - delta time
-     */
-    function animate(speed, dt) {
+    function animate(speed, dt, yawError = 0) {
+        smoothedYaw += (yawError - smoothedYaw) * Math.min(BEND_RESPONSE * dt, 1.0);
+
+        const bendAngle = smoothedYaw * BEND_SCALE;
+
         const swimAnimSpeed = 0.3 + Math.min(speed * 0.8, 2.5);
         htail = (htail - 7.0 * swimAnimSpeed * dt * 60) % 360;
         const thrash = 55.0 * swimAnimSpeed * 0.00021;
 
         for (let i = 0; i < VERT_COUNT; i++) {
+            const origX = RAW_POS[i * 3];
+            const origZ = RAW_POS[i * 3 + 2];
+
+            const angle = bendAngle * BODY_T[i];
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+            const dz = origZ - maxZ;
+            posAttr.setX(i, origX * cosA - dz * sinA);
+            posAttr.setZ(i, origX * sinA + dz * cosA + maxZ);
+
             const segId = SEG_IDS[i];
             if (segId === 0) continue;
             const params = SEG_PARAMS[segId];
