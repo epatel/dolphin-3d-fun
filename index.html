@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oceanic AI — Intelligence that flows</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0e1a;
+            --card: rgba(20, 28, 58, 0.6);
+            --accent: #00d4ff;
+            --accent-dim: rgba(0, 212, 255, 0.15);
+            --text: #e0e6f0;
+            --dim: #8892a8;
+            --border: rgba(255,255,255,0.06);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 48px;
+            background: rgba(10,14,26,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .logo { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+        .nav-links { display: flex; gap: 32px; }
+        .nav-links a { color: var(--dim); text-decoration: none; font-size: 14px; font-weight: 500; transition: color .2s; }
+        .nav-links a:hover { color: var(--text); }
+        .cta-nav {
+            padding: 8px 20px; background: var(--accent); color: var(--bg);
+            border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s;
+        }
+        .cta-nav:hover { opacity: 0.85; }
+        .hero {
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            padding: 120px 24px 80px; position: relative;
+        }
+        .hero::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 40%, rgba(0,100,180,0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 50% at 30% 20%, rgba(0,212,255,0.05) 0%, transparent 60%);
+        }
+        .hero h1 {
+            font-size: clamp(36px,6vw,72px); font-weight: 800; letter-spacing: -2px; line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #fff 0%, #a0c4ff 50%, var(--accent) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hero p { font-size: clamp(16px,2vw,20px); color: var(--dim); max-width: 560px; margin-bottom: 40px; }
+        .hero-buttons { display: flex; gap: 16px; }
+        .btn-primary {
+            padding: 14px 32px; background: var(--accent); color: var(--bg); border: none;
+            border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,212,255,0.3); }
+        .btn-secondary {
+            padding: 14px 32px; background: transparent; color: var(--text);
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
+            font-size: 16px; font-weight: 500; cursor: pointer; transition: border-color .2s, background .2s;
+        }
+        .btn-secondary:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.03); }
+        .features { padding: 80px 48px; max-width: 1200px; margin: 0 auto; }
+        .features h2 { text-align: center; font-size: 36px; font-weight: 700; margin-bottom: 12px; letter-spacing: -1px; }
+        .features .subtitle { text-align: center; color: var(--dim); margin-bottom: 56px; font-size: 18px; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        .feature-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 32px; backdrop-filter: blur(10px); transition: border-color .3s, transform .3s;
+        }
+        .feature-card:hover { border-color: rgba(0,212,255,0.2); transform: translateY(-4px); }
+        .feature-icon {
+            width: 48px; height: 48px; border-radius: 12px; background: var(--accent-dim);
+            display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px;
+        }
+        .feature-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+        .feature-card p { color: var(--dim); font-size: 15px; }
+        .stats { padding: 80px 48px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 32px; max-width: 1000px; margin: 0 auto; text-align: center; }
+        .stat-item h3 { font-size: 48px; font-weight: 800; color: var(--accent); letter-spacing: -2px; }
+        .stat-item p { color: var(--dim); font-size: 14px; margin-top: 4px; }
+        footer { padding: 48px; text-align: center; color: var(--dim); font-size: 14px; }
+        footer a { color: var(--dim); text-decoration: none; }
+        footer a:hover { color: var(--text); }
+        #dolphin-toggle {
+            position: fixed; top: 18px; left: 18px; z-index: 10000;
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 2px solid rgba(0,212,255,0.3); background: rgba(10,14,39,0.85);
+            backdrop-filter: blur(12px); color: white; font-size: 22px; cursor: pointer;
+            transition: all .3s ease; display: flex; align-items: center; justify-content: center;
+            line-height: 1; padding: 0;
+        }
+        #dolphin-toggle:hover {
+            border-color: var(--accent); box-shadow: 0 0 24px rgba(0,212,255,0.25); transform: scale(1.12);
+        }
+        #dolphin-toggle.active {
+            background: rgba(0,212,255,0.15); border-color: var(--accent); box-shadow: 0 0 16px rgba(0,212,255,0.2);
+        }
+        @media (max-width: 768px) {
+            nav { padding: 14px 20px; }
+            .nav-links { display: none; }
+            .features { padding: 60px 20px; }
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+            .hero-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">Oceanic AI</div>
+    <div class="nav-links">
+        <a href="#">Product</a><a href="#">Solutions</a><a href="#">Developers</a><a href="#">Pricing</a>
+    </div>
+    <button class="cta-nav">Get Started</button>
+</nav>
+
+<section class="hero">
+    <h1>Intelligence that flows<br>like the ocean</h1>
+    <p>Next-generation AI infrastructure for teams that move at the speed of thought. Deploy, scale, and iterate — effortlessly.</p>
+    <div class="hero-buttons">
+        <button class="btn-primary">Start Free Trial</button>
+        <button class="btn-secondary">Watch Demo</button>
+    </div>
+</section>
+
+<section class="features">
+    <h2>Built for the deep end</h2>
+    <p class="subtitle">Everything you need to ship AI-powered products at scale.</p>
+    <div class="feature-grid">
+        <div class="feature-card"><div class="feature-icon">&#x26A1;</div><h3>Sub-100ms Inference</h3><p>Edge-optimized model serving with automatic batching and smart caching. Your users never wait.</p></div>
+        <div class="feature-card"><div class="feature-icon">&#x1F310;</div><h3>Global Mesh</h3><p>Deploy to 40+ regions with a single command. Traffic routes to the nearest healthy node automatically.</p></div>
+        <div class="feature-card"><div class="feature-icon">&#x1F512;</div><h3>Zero-Trust Security</h3><p>End-to-end encryption, SOC 2 Type II certified, with fine-grained access controls and full audit trails.</p></div>
+        <div class="feature-card"><div class="feature-icon">&#x1F4CA;</div><h3>Real-time Observability</h3><p>Trace every request from ingestion to response. Spot anomalies before your users do.</p></div>
+        <div class="feature-card"><div class="feature-icon">&#x1F504;</div><h3>Continuous Training</h3><p>Feedback loops that improve your models in production. Ship, learn, iterate — on autopilot.</p></div>
+        <div class="feature-card"><div class="feature-icon">&#x1F9E9;</div><h3>Composable Pipelines</h3><p>Chain models, transforms, and business logic into declarative workflows. Version everything.</p></div>
+    </div>
+</section>
+
+<section class="stats">
+    <div class="stats-grid">
+        <div class="stat-item"><h3>4.2B</h3><p>Requests per day</p></div>
+        <div class="stat-item"><h3>99.99%</h3><p>Uptime SLA</p></div>
+        <div class="stat-item"><h3>2,400+</h3><p>Enterprise customers</p></div>
+        <div class="stat-item"><h3>42ms</h3><p>Median latency</p></div>
+    </div>
+</section>
+
+<footer>
+    <p>&copy; 2026 Oceanic AI, Inc. &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Status</a></p>
+</footer>
+
+<button id="dolphin-toggle" title="Release the dolphin!">&#x1F42C;</button>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { Vehicle } from './vehicle.js';
+import { createDolphin } from './dolphin.js';
+
+// ─── Renderer ───
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.domElement.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;display:none;';
+document.body.appendChild(renderer.domElement);
+
+// ─── Scene & Camera ───
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.z = 10;
+
+// ─── Lighting ───
+scene.add(new THREE.AmbientLight(0x6699bb, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
+dirLight.position.set(3, 4, 5);
+scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0x0066dd, 0.4);
+fillLight.position.set(-2, -3, 3);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0x00aaff, 0.3);
+rimLight.position.set(0, 2, -3);
+scene.add(rimLight);
+
+// ─── Dolphin model ───
+const { group: dolphinGroup, animate: animateDolphin } = createDolphin();
+dolphinGroup.scale.setScalar(0);
+scene.add(dolphinGroup);
+
+// ─── Vehicle ───
+const vehicle = new Vehicle();
+
+// ─── State ───
+let dolphinEnabled = false;
+let currentScale = 0;
+let targetScale = 0;
+const mouse = new THREE.Vector2(0, 0);
+const smoothMouse = new THREE.Vector2(0, 0);
+const dolphinPos = new THREE.Vector2(0, 0);
+let htail = 0;
+
+let behavior = 'follow';
+let idleTime = 0;
+let circleAngle = 0;
+let circleStartAngle = 0;
+const CIRCLE_RADIUS = 0.25;
+const CIRCLE_SPEED = 0.6;
+
+let exploreTarget = new THREE.Vector2(0, 0);
+let exploreTimer = 0;
+let lastMouseX = 0, lastMouseY = 0;
+let mouseMoveAccum = 0;
+
+function pickExploreTarget() {
+    exploreTarget.set((Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2);
+    exploreTimer = 0;
+}
+
+// ─── Bubble Particles ───
+const BUBBLE_N = 50;
+const BUBBLE_LIFETIME = 5.0;
+const bubblePos = new Float32Array(BUBBLE_N * 3);
+const bubbleLife = new Float32Array(BUBBLE_N);
+const bubbleSizes = new Float32Array(BUBBLE_N);
+for (let i = 0; i < BUBBLE_N; i++) {
+    bubblePos[i*3] = bubblePos[i*3+1] = bubblePos[i*3+2] = 0;
+    bubbleLife[i] = Math.random() * BUBBLE_LIFETIME * 0.8;
+    bubbleSizes[i] = 0;
+}
+const bubbleGeo = new THREE.BufferGeometry();
+bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePos, 3));
+bubbleGeo.setAttribute('aSize', new THREE.BufferAttribute(bubbleSizes, 1));
+
+const bubbleShader = new THREE.ShaderMaterial({
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    uniforms: {
+        uScale: { value: window.innerHeight },
+    },
+    vertexShader: `
+        attribute float aSize;
+        varying float vAlpha;
+        uniform float uScale;
+        void main() {
+            vAlpha = aSize;
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            gl_PointSize = aSize * uScale * 0.04 / -mv.z;
+            gl_Position = projectionMatrix * mv;
+        }
+    `,
+    fragmentShader: `
+        varying float vAlpha;
+        void main() {
+            float d = length(gl_PointCoord - 0.5) * 2.0;
+            if (d > 1.0) discard;
+            float soft = 1.0 - d * d;
+            gl_FragColor = vec4(0.55, 0.82, 1.0, soft * vAlpha * 0.6);
+        }
+    `,
+});
+
+const bubbles = new THREE.Points(bubbleGeo, bubbleShader);
+scene.add(bubbles);
+
+function resetBubble(i) {
+    const blowhole = new THREE.Vector3(0, 0.06, 0.55);
+    dolphinGroup.localToWorld(blowhole);
+    bubblePos[i*3] = blowhole.x + (Math.random()-0.5)*0.04;
+    bubblePos[i*3+1] = blowhole.y + (Math.random()-0.5)*0.04;
+    bubblePos[i*3+2] = blowhole.z + (Math.random()-0.5)*0.04;
+    bubbleLife[i] = 0;
+}
+
+// ─── Frustum helpers ───
+function getVisibleHalfSize() {
+    const vFov = camera.fov * Math.PI / 180;
+    const halfH = Math.tan(vFov / 2) * camera.position.z;
+    const halfW = halfH * camera.aspect;
+    return { halfW, halfH };
+}
+
+// ─── Animation ───
+const clock = new THREE.Clock();
+
+function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+
+    currentScale += (targetScale - currentScale) * (1 - Math.exp(-8 * dt));
+    if (currentScale < 0.005 && targetScale === 0) {
+        currentScale = 0;
+        renderer.domElement.style.display = 'none';
+        return;
+    }
+    renderer.domElement.style.display = 'block';
+
+    const { halfW, halfH } = getVisibleHalfSize();
+
+    // Mouse smoothing
+    const f1 = 1 - Math.exp(-4 * dt);
+    smoothMouse.x += (mouse.x - smoothMouse.x) * f1;
+    smoothMouse.y += (mouse.y - smoothMouse.y) * f1;
+
+    // Detect meaningful mouse movement
+    const mouseDx = mouse.x - lastMouseX;
+    const mouseDy = mouse.y - lastMouseY;
+    const mouseMoveDist = Math.sqrt(mouseDx * mouseDx + mouseDy * mouseDy);
+    lastMouseX = mouse.x;
+    lastMouseY = mouse.y;
+    mouseMoveAccum = mouseMoveAccum * 0.9 + mouseMoveDist;
+
+    // Behavior state machine — use NDC positions
+    const vehNdcX = vehicle.pos.x / halfW;
+    const vehNdcY = vehicle.pos.y / halfH;
+    const distToMouse = Math.sqrt(
+        (vehNdcX - smoothMouse.x) ** 2 + (vehNdcY - smoothMouse.y) ** 2
+    );
+
+    if (behavior === 'follow') {
+        if (distToMouse < 0.1 && mouseMoveAccum < 0.003) {
+            idleTime += dt;
+            if (idleTime > 0.8) {
+                behavior = 'circle';
+                circleStartAngle = Math.atan2(
+                    dolphinPos.y - smoothMouse.y,
+                    dolphinPos.x - smoothMouse.x
+                );
+                circleAngle = circleStartAngle;
+                idleTime = 0;
+            }
+        } else {
+            idleTime = 0;
+        }
+    } else if (behavior === 'circle') {
+        if (mouseMoveAccum > 0.008) {
+            behavior = 'follow';
+            idleTime = 0;
+        }
+    } else if (behavior === 'explore') {
+        if (mouseMoveAccum > 0.008) {
+            behavior = 'follow';
+            idleTime = 0;
+        }
+    }
+
+    // Compute nav target in world space based on behavior
+    let navX, navY;
+
+    if (behavior === 'follow') {
+        navX = smoothMouse.x;
+        navY = smoothMouse.y;
+    } else if (behavior === 'circle') {
+        circleAngle += CIRCLE_SPEED * dt;
+        const totalRotation = circleAngle - circleStartAngle;
+        if (totalRotation > Math.PI * 4) {
+            behavior = 'explore';
+            pickExploreTarget();
+        }
+        const ccx = THREE.MathUtils.clamp(smoothMouse.x, -0.55, 0.55);
+        const ccy = THREE.MathUtils.clamp(smoothMouse.y, -0.55, 0.55);
+        navX = ccx + Math.cos(circleAngle) * CIRCLE_RADIUS;
+        navY = ccy + Math.sin(circleAngle) * CIRCLE_RADIUS;
+    } else {
+        exploreTimer += dt;
+        const dex = vehicle.pos.x / halfW - exploreTarget.x;
+        const dey = vehicle.pos.y / halfH - exploreTarget.y;
+        if (Math.sqrt(dex*dex + dey*dey) < 0.15 || exploreTimer > 5.0) {
+            pickExploreTarget();
+        }
+        navX = exploreTarget.x;
+        navY = exploreTarget.y;
+    }
+
+    // Feed vehicle the target in world space — same as debug page
+    const navTarget = new THREE.Vector3(navX * halfW, navY * halfH, 0);
+    const { speed } = vehicle.update(navTarget, dt);
+
+    // Apply vehicle to dolphin group
+    vehicle.applyTo(dolphinGroup);
+    dolphinGroup.scale.setScalar(currentScale * 0.5);
+
+    // Update dolphinPos (NDC) from vehicle world pos for behavior state checks
+    dolphinPos.x = vehicle.pos.x / halfW;
+    dolphinPos.y = vehicle.pos.y / halfH;
+
+    // Swimming animation
+    animateDolphin(speed, dt);
+
+    // Bubbles — gentle drift upward, slow fade out
+    const bp = bubbleGeo.attributes.position;
+    const bs = bubbleGeo.attributes.aSize;
+    for (let i = 0; i < BUBBLE_N; i++) {
+        bubbleLife[i] += dt;
+        if (bubbleLife[i] > BUBBLE_LIFETIME) { resetBubble(i); continue; }
+        const t = bubbleLife[i] / BUBBLE_LIFETIME;
+        // Gentle drift
+        bubblePos[i*3] += (Math.random()-0.5) * 0.002;
+        bubblePos[i*3+1] += dt * 0.25;
+        bubblePos[i*3+2] += (Math.random()-0.5) * 0.002;
+        // Fade: ramp up quickly, then fade out. Grow as they age.
+        const fadeIn = Math.min(t * 8.0, 1.0);
+        const fadeOut = 1.0 - THREE.MathUtils.smoothstep(t, 0.5, 1.0);
+        const grow = 1.0 + t * 2.0;
+        bubbleSizes[i] = fadeIn * fadeOut * grow * currentScale;
+    }
+    bp.needsUpdate = true;
+    bs.needsUpdate = true;
+
+    renderer.render(scene, camera);
+}
+animate();
+
+// ─── Events ───
+window.addEventListener('mousemove', e => {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    bubbleShader.uniforms.uScale.value = window.innerHeight;
+});
+
+const btn = document.getElementById('dolphin-toggle');
+btn.addEventListener('click', () => {
+    dolphinEnabled = !dolphinEnabled;
+    btn.classList.toggle('active', dolphinEnabled);
+    targetScale = dolphinEnabled ? 1 : 0;
+    if (dolphinEnabled) {
+        renderer.domElement.style.display = 'block';
+        const { halfW, halfH } = getVisibleHalfSize();
+        vehicle.reset();
+        vehicle.pos.set(mouse.x * halfW, mouse.y * halfH, 0);
+        dolphinPos.set(mouse.x, mouse.y);
+        smoothMouse.set(mouse.x, mouse.y);
+    }
+});
+</script>
+</body>
+</html>
