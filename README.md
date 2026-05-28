@@ -35,5 +35,5 @@ Requires a modern browser with ES module and `importmap` support.
 
 ## Credits
 
-- Dolphin model: Silicon Graphics, Inc. (1993) — from the [GLUT Atlantis demo](https://www.opengl.org/archives/resources/code/samples/glut_examples/examples/examples.html)
+- Dolphin model: Silicon Graphics, Inc. (1993) — from the [GLUT Atlantis demo](https://www.opengl.org/archives/resources/code/samples/glut_examples/demos/demos.html)
 - Rendering: [Three.js](https://threejs.org/)
