@@ -32,16 +32,10 @@ export function createDolphin() {
     const positions = new Float32Array(RAW_POS);
     const normals = new Float32Array(RAW_NORM);
 
-    // Countershading vertex colors
+    // Countershading vertex colors — computed from surface normals below,
+    // so thin horizontal fins shade by which way each face points (top = dark
+    // dorsal, underside = light belly) rather than by their low Y position.
     const colors = new Float32Array(VERT_COUNT * 3);
-    const topCol = new THREE.Color(0x3a7aa8);
-    const bellyCol = new THREE.Color(0xc8dde8);
-    for (let i = 0; i < VERT_COUNT; i++) {
-        const y = positions[i * 3 + 1];
-        const blend = THREE.MathUtils.smoothstep(y + 0.15, -0.2, 0.2);
-        const c = bellyCol.clone().lerp(topCol, blend);
-        colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-    }
 
     // Smooth normals with double-sided face awareness
     const origPositions = new Float32Array(RAW_POS);
@@ -97,19 +91,55 @@ export function createDolphin() {
 
     computeSmoothNormals(positions, normals);
 
+    // Countershade by normal orientation: faces pointing up get the dark dorsal
+    // color, faces pointing down get the light belly color, flanks blend between.
+    // The fins carry explicit front+back faces, so with FrontSide rendering each
+    // sheet shows only from its correct side and shades correctly (no z-fight).
+    const topCol = new THREE.Color(0x3a7aa8);
+    const bellyCol = new THREE.Color(0xc8dde8);
+    for (let i = 0; i < VERT_COUNT; i++) {
+        const blend = THREE.MathUtils.smoothstep(normals[i * 3 + 1], -0.5, 0.5);
+        const c = bellyCol.clone().lerp(topCol, blend);
+        colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+    }
+
+    // Fins/flukes are zero-thickness double-sided sheets: their front and back
+    // faces share positions but have opposing normals, so the two sides z-fight.
+    // Detect such coincident-opposing vertices and push each along its own normal
+    // to give the sheet real thin volume — then FrontSide rendering shows each
+    // side from its correct angle (dark dorsal on top, light belly underneath)
+    // with no z-fighting. Applied per-frame in animate() so it survives the swim
+    // deformation that rewrites positions each tick.
+    const FIN_THICKNESS = 0.0006;
+    const finOffset = new Float32Array(VERT_COUNT * 3);
+    for (let i = 0; i < VERT_COUNT; i++) {
+        for (const si of posMap.get(posKey(i))) {
+            if (si === i) continue;
+            if (normals[i*3]*normals[si*3] + normals[i*3+1]*normals[si*3+1] + normals[i*3+2]*normals[si*3+2] < -0.3) {
+                finOffset[i*3] = normals[i*3] * FIN_THICKNESS;
+                finOffset[i*3+1] = normals[i*3+1] * FIN_THICKNESS;
+                finOffset[i*3+2] = normals[i*3+2] * FIN_THICKNESS;
+                break;
+            }
+        }
+    }
+
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.MeshPhysicalMaterial({
         vertexColors: true, metalness: 0.05, roughness: 0.25,
-        clearcoat: 1.0, clearcoatRoughness: 0.06, side: THREE.DoubleSide,
+        clearcoat: 1.0, clearcoatRoughness: 0.06, side: THREE.FrontSide,
     });
 
     const mesh = new THREE.Mesh(geo, mat);
     const group = new THREE.Group();
     group.add(mesh);
-    group.add(new THREE.PointLight(0x00aaff, 0.5, 5));
+    // NOTE: a cyan PointLight used to sit here at the body center. It lit the
+    // nearby pectoral flippers from inside, making them glow blue from below
+    // regardless of the key light — the long-hunted "fins shine underneath" bug.
+    // Removed; scene ambient + fill provide the soft underside light instead.
 
     // Animation state
     let htail = 0;
@@ -135,19 +165,19 @@ export function createDolphin() {
             const cosA = Math.cos(angle);
             const sinA = Math.sin(angle);
             const dz = origZ - maxZ;
-            posAttr.setX(i, origX * cosA - dz * sinA);
-            posAttr.setZ(i, origX * sinA + dz * cosA + maxZ);
+            posAttr.setX(i, origX * cosA - dz * sinA + finOffset[i * 3]);
+            posAttr.setZ(i, origX * sinA + dz * cosA + maxZ + finOffset[i * 3 + 2]);
 
             const segId = SEG_IDS[i];
-            if (segId === 0) continue;
-            const params = SEG_PARAMS[segId];
-            if (!params) continue;
-            const [ampMult, phaseOff] = params;
-            if (segId === 9) {
-                posAttr.setY(i, INIT_Y[i] + 100 * 0.00021);
-            } else {
-                posAttr.setY(i, INIT_Y[i] + ampMult * thrash * Math.sin((htail + phaseOff) * RRAD));
+            const params = segId === 0 ? null : SEG_PARAMS[segId];
+            // INIT_Y is only populated for animated segments; non-animated
+            // vertices keep their original RAW_POS height.
+            let baseY = params ? INIT_Y[i] : RAW_POS[i * 3 + 1];
+            if (params) {
+                const [ampMult, phaseOff] = params;
+                baseY += segId === 9 ? 100 * 0.00021 : ampMult * thrash * Math.sin((htail + phaseOff) * RRAD);
             }
+            posAttr.setY(i, baseY + finOffset[i * 3 + 1]);
         }
         posAttr.needsUpdate = true;
         computeSmoothNormals(posAttr.array, geo.attributes.normal.array);

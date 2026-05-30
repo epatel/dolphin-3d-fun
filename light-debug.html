@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dolphin Light Debug</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1a2e; overflow: hidden; font-family: system-ui, sans-serif; }
+        canvas { display: block; }
+
+        #panel {
+            position: fixed; top: 16px; left: 16px; width: 260px;
+            background: rgba(10,12,24,0.82); padding: 14px 16px; border-radius: 12px;
+            color: #cdd6e4; font-size: 12px; backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.08);
+            max-height: calc(100vh - 32px); overflow-y: auto;
+        }
+        #panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+            color: #00d4ff; margin: 14px 0 8px; }
+        #panel h2:first-child { margin-top: 0; }
+        .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+        .row label { flex: 0 0 64px; color: #8b98ad; }
+        .row input[type="range"] { flex: 1; min-width: 0; }
+        .row .val { flex: 0 0 44px; text-align: right; color: #00d4ff;
+            font-variant-numeric: tabular-nums; }
+        .row select, .row input[type="color"] {
+            flex: 1; background: #1b2236; color: #cdd6e4;
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 5px; padding: 3px 4px;
+        }
+        .row input[type="color"] { height: 26px; padding: 1px; cursor: pointer; }
+        .check { display: flex; align-items: center; gap: 8px; margin: 6px 0; cursor: pointer; }
+        .check input { width: 15px; height: 15px; }
+        #view-btns { position: fixed; top: 16px; right: 16px; display: flex; gap: 6px; }
+        #view-btns button {
+            background: rgba(10,12,24,0.82); color: #cdd6e4;
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+        }
+        #view-btns button.active { background: rgba(0,212,255,0.2); color: #00d4ff; border-color: #00d4ff; }
+        .hint { color: #6b7689; font-size: 11px; line-height: 1.4; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div id="view-btns">
+        <button data-view="side" class="active">Side</button>
+        <button data-view="top">Top</button>
+        <button data-view="front">Front</button>
+    </div>
+
+    <div id="panel">
+        <h2>Key Light</h2>
+        <div class="row">
+            <label>Type</label>
+            <select id="type">
+                <option value="directional">Directional</option>
+                <option value="point">Point</option>
+                <option value="spot">Spot</option>
+            </select>
+        </div>
+        <div class="row">
+            <label>Parent</label>
+            <select id="parent">
+                <option value="world">World (fixed)</option>
+                <option value="model">Model (follows)</option>
+            </select>
+        </div>
+        <div class="row"><label>Pos X</label><input type="range" id="lx" min="-8" max="8" step="0.1" value="2"><span class="val" id="lx-v">2.0</span></div>
+        <div class="row"><label>Pos Y</label><input type="range" id="ly" min="-8" max="8" step="0.1" value="7"><span class="val" id="ly-v">7.0</span></div>
+        <div class="row"><label>Pos Z</label><input type="range" id="lz" min="-8" max="8" step="0.1" value="2.5"><span class="val" id="lz-v">2.5</span></div>
+        <div class="row"><label>Intensity</label><input type="range" id="lint" min="0" max="5" step="0.05" value="1.4"><span class="val" id="lint-v">1.40</span></div>
+        <div class="row"><label>Color</label><input type="color" id="lcol" value="#ffffff"></div>
+        <div class="row" id="angle-row" style="display:none"><label>Cone°</label><input type="range" id="lang" min="5" max="80" step="1" value="35"><span class="val" id="lang-v">35</span></div>
+        <label class="check"><input type="checkbox" id="marker" checked> Show light marker</label>
+
+        <h2>Ambient / Fill</h2>
+        <div class="row"><label>Ambient</label><input type="range" id="amb" min="0" max="2" step="0.05" value="0.6"><span class="val" id="amb-v">0.60</span></div>
+        <div class="row"><label>Fill</label><input type="range" id="fill" min="0" max="2" step="0.05" value="0.4"><span class="val" id="fill-v">0.40</span></div>
+
+        <h2>Material</h2>
+        <div class="row"><label>Clearcoat</label><input type="range" id="cc" min="0" max="1" step="0.01" value="1.0"><span class="val" id="cc-v">1.00</span></div>
+        <div class="row"><label>CC Rough</label><input type="range" id="ccr" min="0" max="1" step="0.01" value="0.06"><span class="val" id="ccr-v">0.06</span></div>
+        <div class="row"><label>Roughness</label><input type="range" id="rough" min="0" max="1" step="0.01" value="0.25"><span class="val" id="rough-v">0.25</span></div>
+        <div class="row"><label>Metalness</label><input type="range" id="metal" min="0" max="1" step="0.01" value="0.05"><span class="val" id="metal-v">0.05</span></div>
+        <div class="row">
+            <label>Side</label>
+            <select id="side">
+                <option value="front">FrontSide</option>
+                <option value="double">DoubleSide</option>
+                <option value="back">BackSide</option>
+            </select>
+        </div>
+        <label class="check"><input type="checkbox" id="flatnorm"> Show normals</label>
+        <label class="check"><input type="checkbox" id="vcol" checked> Vertex colors (countershading)</label>
+
+        <h2>Model</h2>
+        <label class="check"><input type="checkbox" id="spin"> Auto-spin (yaw)</label>
+        <div class="row"><label>Spin spd</label><input type="range" id="spinspd" min="-3" max="3" step="0.05" value="0.6"><span class="val" id="spinspd-v">0.60</span></div>
+        <label class="check"><input type="checkbox" id="swim" checked> Swim animation</label>
+        <div class="row"><label>Swim spd</label><input type="range" id="swimspd" min="0" max="5" step="0.05" value="1.5"><span class="val" id="swimspd-v">1.50</span></div>
+        <div class="row"><label>Yaw bend</label><input type="range" id="yaw" min="-1.5" max="1.5" step="0.01" value="0"><span class="val" id="yaw-v">0.00</span></div>
+        <p class="hint">Drag to orbit camera. "Parent: Model" attaches the light to the dolphin so it follows rotation — matches the real overlay only if set to World.</p>
+    </div>
+
+    <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/" } }
+    </script>
+    <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
+    import { createDolphin } from './dolphin.js';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+
+    const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(3.5, 1.2, 3.5);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 0, 0);
+
+    // Reference helpers
+    const grid = new THREE.GridHelper(6, 24, 0x333355, 0x222244);
+    scene.add(grid);
+    scene.add(new THREE.AxesHelper(1.2));
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0x6699bb, 0.6);
+    scene.add(ambient);
+    const fill = new THREE.DirectionalLight(0x0066dd, 0.4);
+    fill.position.set(-2, -3, 3);
+    scene.add(fill);
+
+    // Dolphin
+    const { group: dolphin, animate: animateDolphin } = createDolphin();
+    dolphin.scale.setScalar(0.6);
+    scene.add(dolphin);
+
+    // Grab the mesh + material for live material tweaking and normal viz
+    let dolphinMesh = null;
+    dolphin.traverse(o => { if (o.isMesh) dolphinMesh = o; });
+    const dolphinMat = dolphinMesh.material;
+    const normalHelper = new VertexNormalsHelper(dolphinMesh, 0.12, 0x00ff88);
+    normalHelper.visible = false;
+    scene.add(normalHelper);
+
+    // Marker: a ball at the light position + a ray to origin
+    const markerGroup = new THREE.Group();
+    const ball = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 24, 24),
+        new THREE.MeshBasicMaterial({ color: 0xffee66 })
+    );
+    markerGroup.add(ball);
+    const rayGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+    const ray = new THREE.Line(rayGeo, new THREE.LineBasicMaterial({ color: 0xffee66, transparent: true, opacity: 0.5 }));
+    markerGroup.add(ray);
+    scene.add(markerGroup);
+
+    // ── Key light, rebuilt when type changes ──
+    let keyLight = null;
+    function buildKeyLight(type) {
+        if (keyLight) keyLight.parent.remove(keyLight);
+        const col = new THREE.Color($('lcol').value);
+        const inten = parseFloat($('lint').value);
+        if (type === 'point') keyLight = new THREE.PointLight(col, inten, 0, 2);
+        else if (type === 'spot') keyLight = new THREE.SpotLight(col, inten, 0, parseFloat($('lang').value) * Math.PI / 180, 0.4, 1.5);
+        else keyLight = new THREE.DirectionalLight(col, inten);
+        attachKeyLight();
+        if (keyLight.target) scene.add(keyLight.target); // target at origin by default
+        $('angle-row').style.display = type === 'spot' ? '' : 'none';
+    }
+    function attachKeyLight() {
+        const parent = $('parent').value === 'model' ? dolphin : scene;
+        parent.add(keyLight);
+    }
+
+    // ── UI plumbing ──
+    function $(id) { return document.getElementById(id); }
+    function bind(id, fn) {
+        const el = $(id), v = $(id + '-v');
+        const upd = () => { if (v) v.textContent = parseFloat(el.value).toFixed(el.step.includes('.') ? 2 : 0); fn(parseFloat(el.value)); };
+        el.addEventListener('input', upd); upd();
+    }
+
+    buildKeyLight('directional');
+
+    bind('lx', () => updateLightPos());
+    bind('ly', () => updateLightPos());
+    bind('lz', () => updateLightPos());
+    bind('lint', v => { keyLight.intensity = v; });
+    bind('amb', v => { ambient.intensity = v; });
+    bind('fill', v => { fill.intensity = v; });
+    bind('lang', v => { if (keyLight?.isSpotLight) keyLight.angle = v * Math.PI / 180; });
+    bind('cc', v => { dolphinMat.clearcoat = v; });
+    bind('ccr', v => { dolphinMat.clearcoatRoughness = v; });
+    bind('rough', v => { dolphinMat.roughness = v; });
+    bind('metal', v => { dolphinMat.metalness = v; });
+    bind('spinspd', () => {});
+    bind('swimspd', () => {});
+    bind('yaw', () => {});
+
+    $('lcol').addEventListener('input', e => { keyLight.color.set(e.target.value); ball.material.color.set(e.target.value); ray.material.color.set(e.target.value); });
+    $('type').addEventListener('change', e => { buildKeyLight(e.target.value); updateLightPos(); });
+    $('parent').addEventListener('change', () => { keyLight.parent.remove(keyLight); attachKeyLight(); });
+    $('marker').addEventListener('change', e => { markerGroup.visible = e.target.checked; });
+    $('flatnorm').addEventListener('change', e => { normalHelper.visible = e.target.checked; });
+    $('vcol').addEventListener('change', e => { dolphinMat.vertexColors = e.target.checked; dolphinMat.needsUpdate = true; });
+    $('side').addEventListener('change', e => {
+        dolphinMat.side = { double: THREE.DoubleSide, front: THREE.FrontSide, back: THREE.BackSide }[e.target.value];
+        dolphinMat.needsUpdate = true;
+    });
+
+    function updateLightPos() {
+        if (!keyLight) return;
+        const x = parseFloat($('lx').value), y = parseFloat($('ly').value), z = parseFloat($('lz').value);
+        keyLight.position.set(x, y, z);
+        // Marker follows the light's WORLD position (so Model-parented light shows correctly)
+        keyLight.updateWorldMatrix(true, false);
+        const wp = new THREE.Vector3().setFromMatrixPosition(keyLight.matrixWorld);
+        ball.position.copy(wp);
+        rayGeo.setFromPoints([wp, new THREE.Vector3(0, 0, 0)]);
+    }
+
+    updateLightPos();
+
+    // Camera presets
+    const views = {
+        side:  [3.5, 0.6, 0.01], top: [0.01, 4, 0.01], front: [0.01, 0.6, 3.8],
+    };
+    $('view-btns').addEventListener('click', e => {
+        if (e.target.tagName !== 'BUTTON') return;
+        document.querySelectorAll('#view-btns button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const v = views[e.target.dataset.view];
+        if (v) camera.position.set(...v);
+        controls.target.set(0, 0, 0);
+    });
+
+    window.__dbg = { THREE, scene, camera, controls, ambient, fill, dolphin, dolphinMesh, dolphinMat, get keyLight() { return keyLight; }, updateLightPos };
+
+    const clock = new THREE.Clock();
+    function loop() {
+        requestAnimationFrame(loop);
+        const dt = Math.min(clock.getDelta(), 0.05);
+
+        if ($('spin').checked) dolphin.rotation.y += parseFloat($('spinspd').value) * dt;
+
+        const swimSpd = $('swim').checked ? parseFloat($('swimspd').value) : 0;
+        animateDolphin(swimSpd, dt, parseFloat($('yaw').value));
+
+        // Keep marker synced to a model-parented light as it spins
+        if ($('parent').value === 'model') updateLightPos();
+
+        if (normalHelper.visible) normalHelper.update();
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    loop();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+    });
+    </script>
+</body>
+</html>
